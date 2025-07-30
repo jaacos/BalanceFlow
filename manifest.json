@@ -8,12 +8,12 @@
   "theme_color": "#4f46e5",
   "icons": [
     {
-      "src": "assets/logo-192x192.png",
+      "src": "jaacos/icono_enmascarable_192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "assets/logo-512x512.png",
+      "src": "jaacos/icono_enmascarable_512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
