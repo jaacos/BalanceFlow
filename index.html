@@ -22,7 +22,6 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        .modal-hidden { display: none; }
     </style>
 </head>
 <body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
@@ -32,7 +31,7 @@
         <header class="text-center space-y-4">
             <img src="jaacos/icono_enmascarable_192.png" alt="Logo de la App" class="mx-auto h-16 w-auto">
             <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Calculadora de Presupuesto Mensual</h1>
-            <p class="text-slate-500">Registra, analiza y mejora tus finanzas.</p>
+            <p class="text-slate-500">Registra tus finanzas personales.</p>
         </header>
 
         <section class="flex justify-center items-center gap-4 bg-slate-50 p-3 rounded-lg">
@@ -55,12 +54,6 @@
                 <button type="submit" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition">Añadir</button>
             </form>
         </section>
-        
-        <section class="border-t pt-4 text-center">
-             <button id="show-analysis-btn" class="w-full md:w-auto bg-emerald-500 text-white font-semibold py-2 px-6 rounded-md hover:bg-emerald-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition">
-                Analizar y Exportar Mes
-            </button>
-        </section>
 
         <section>
             <h3 class="text-lg font-semibold mb-3 text-slate-700">Historial de Transacciones</h3>
@@ -71,32 +64,6 @@
             </div>
         </section>
 
-    </div>
-
-    <!-- Analysis Modal -->
-    <div id="analysis-modal" class="modal-hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-2xl shadow-xl p-6 md:p-8 w-full max-w-3xl max-h-[90vh] overflow-y-auto custom-scrollbar space-y-6">
-            <div class="flex justify-between items-center">
-                <h2 class="text-xl font-bold text-slate-900">Análisis de <span id="analysis-month-year"></span></h2>
-                <button id="close-analysis-btn" class="p-2 rounded-full text-slate-500 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                </button>
-            </div>
-            
-            <div>
-                <h3 class="text-lg font-semibold text-slate-800 mb-2">Feedback Financiero Rápido</h3>
-                <div id="feedback-content" class="bg-slate-50 p-4 rounded-lg text-slate-700 text-sm space-y-2"></div>
-            </div>
-
-            <div>
-                <h3 class="text-lg font-semibold text-slate-800 mb-2">Exportar Datos para Análisis Externo</h3>
-                <p class="text-sm text-slate-500 mb-3">Copia este texto y pégalo en tu IA de preferencia para un análisis detallado.</p>
-                <textarea id="export-data-textarea" readonly class="w-full h-40 p-3 bg-slate-100 border border-slate-200 rounded-md text-xs font-mono custom-scrollbar"></textarea>
-                <button id="copy-data-btn" class="mt-2 w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition">
-                    Copiar al Portapapeles
-                </button>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -112,16 +79,7 @@
         const monthSelect = document.getElementById('month-select');
         const yearInput = document.getElementById('year-input');
         
-        // Modal Elements
-        const showAnalysisBtn = document.getElementById('show-analysis-btn');
-        const analysisModal = document.getElementById('analysis-modal');
-        const closeAnalysisBtn = document.getElementById('close-analysis-btn');
-        const analysisMonthYearEl = document.getElementById('analysis-month-year');
-        const feedbackContentEl = document.getElementById('feedback-content');
-        const exportDataTextarea = document.getElementById('export-data-textarea');
-        const copyDataBtn = document.getElementById('copy-data-btn');
-
-        const LOCAL_STORAGE_KEY = 'budget_app_data_es_pwa_v1';
+        const LOCAL_STORAGE_KEY = 'budget_app_data_es_pwa_v2_simplified';
         let allTransactions = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
 
         function setupDateSelectors() {
@@ -200,101 +158,10 @@
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(allTransactions));
         }
 
-        function generateFeedback() {
-            const periodKey = getCurrentPeriodKey();
-            const transactions = allTransactions[periodKey] || [];
-            if (transactions.length === 0) {
-                feedbackContentEl.innerHTML = `<p>No hay datos para analizar en este periodo.</p>`;
-                return;
-            }
-
-            const income = transactions.filter(t => t.amount > 0).reduce((acc, t) => acc + t.amount, 0);
-            const expensesList = transactions.filter(t => t.amount < 0);
-            const totalExpenses = expensesList.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-            
-            let feedbackHTML = '';
-
-            if (income === 0 && totalExpenses > 0) {
-                 feedbackHTML += `<p><strong>Atención:</strong> Has registrado gastos pero no ingresos. Asegúrate de añadir tus fuentes de ingreso para un análisis completo.</p>`;
-            } else if (income > 0) {
-                const savingsRate = ((income - totalExpenses) / income) * 100;
-                feedbackHTML += `<p><strong>Tasa de Ahorro:</strong> ${savingsRate.toFixed(1)}%</p>`;
-                if (savingsRate > 20) {
-                    feedbackHTML += `<p><strong>Análisis:</strong> ¡Excelente! Estás ahorrando una parte muy saludable de tus ingresos. Sigue así.</p>`;
-                } else if (savingsRate >= 10) {
-                    feedbackHTML += `<p><strong>Análisis:</strong> Vas por buen camino. Tu tasa de ahorro es positiva. Revisa tus gastos para ver si puedes optimizarla aún más.</p>`;
-                } else if (savingsRate >= 0) {
-                     feedbackHTML += `<p><strong>Análisis:</strong> Tu margen de ahorro es ajustado. Es un buen momento para revisar tus gastos variables y buscar áreas de recorte.</p>`;
-                } else {
-                    feedbackHTML += `<p><strong>Análisis:</strong> <span class="font-bold text-red-600">¡Alerta!</span> Tus gastos superan tus ingresos. Es crucial revisar tu presupuesto de inmediato.</p>`;
-                }
-            } else {
-                 feedbackHTML += `<p>Añade ingresos y gastos para poder generar un análisis.</p>`;
-            }
-
-            if (expensesList.length > 0) {
-                const topExpenses = expensesList
-                    .sort((a, b) => a.amount - b.amount)
-                    .slice(0, 3)
-                    .map(t => `${t.description} (${Math.abs(t.amount).toFixed(2)} €)`);
-                feedbackHTML += `<p class="mt-4"><strong>Principales Gastos:</strong> ${topExpenses.join(', ')}.</p>`;
-            }
-            
-            feedbackContentEl.innerHTML = feedbackHTML;
-        }
-
-        function generateExportText() {
-            const periodKey = getCurrentPeriodKey();
-            const transactions = allTransactions[periodKey] || [];
-            const selectedMonthName = monthSelect.options[monthSelect.selectedIndex].text;
-            const year = yearInput.value;
-
-            let report = `Analiza los siguientes datos de mis finanzas personales para ${selectedMonthName} de ${year} y dame consejos detallados para mejorar mi salud financiera, reducir gastos innecesarios y optimizar mi presupuesto.\n\n--- DATOS ---\n`;
-            
-            if (transactions.length > 0) {
-                transactions.forEach(t => {
-                    const type = t.amount > 0 ? "Ingreso" : "Gasto";
-                    report += `${type}: ${t.description}, Importe: ${t.amount.toFixed(2)} €\n`;
-                });
-            } else {
-                report += "No hay transacciones registradas para este periodo.";
-            }
-
-            exportDataTextarea.value = report;
-        }
-
-        function copyToClipboard() {
-            exportDataTextarea.select();
-            document.execCommand('copy');
-            copyDataBtn.innerText = '¡Copiado!';
-            setTimeout(() => {
-                copyDataBtn.innerText = 'Copiar al Portapapeles';
-            }, 2000);
-        }
-
-        function openAnalysisModal() {
-            const selectedMonthName = monthSelect.options[monthSelect.selectedIndex].text;
-            analysisMonthYearEl.textContent = `${selectedMonthName} de ${yearInput.value}`;
-            generateFeedback();
-            generateExportText();
-            analysisModal.classList.remove('modal-hidden');
-        }
-
-        function closeAnalysisModal() {
-            analysisModal.classList.add('modal-hidden');
-        }
-
         // --- EVENT LISTENERS ---
         form.addEventListener('submit', handleAddTransaction);
         monthSelect.addEventListener('change', refreshView);
         yearInput.addEventListener('change', refreshView);
-        
-        showAnalysisBtn.addEventListener('click', openAnalysisModal);
-        closeAnalysisBtn.addEventListener('click', closeAnalysisModal);
-        copyDataBtn.addEventListener('click', copyToClipboard);
-        analysisModal.addEventListener('click', (e) => {
-            if (e.target === analysisModal) closeAnalysisModal();
-        });
 
         // --- PWA Service Worker Registration ---
         if ('serviceWorker' in navigator) {
